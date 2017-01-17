@@ -898,7 +898,7 @@ derivativeChanges <- function (rTime, iList, rEdge, lEdge) {
     curr.slope = ((iList[2])-(iList[1]))/((rTime[2])-(rTime[1]))
     num.changes = 0
     curr.intensity = iList[2]
-    negthreshold = .5
+    negthreshold = 0.5
     posthreshold=1.5
 
     tryCatch({
@@ -975,9 +975,7 @@ kurtosis <- function (iList){
     iUnList <- unlist(iList)
     m <- mean(iUnList, na.rm=TRUE)
     N <- length(iUnList)
-    #for both kurtosis and skew, SD is calculated with N in denominator instead of N-1
-    stdev <- sqrt(sum((iUnList - mean(iUnList))^2) / (N))
-    k <- ((sum(iUnList - m)^4)/N)/(stdev^4)
+    k <- N * sum((iUnList - m)^4)/(sum((iUnList - m)^2)^2)
     return(k)
 }
 
@@ -986,9 +984,7 @@ skew <- function(iList){
     iUnList <- unlist(iList)
     m <- mean(iUnList, na.rm=TRUE)
     N <- length(iUnList)
-    #for both kurtosis and skew, SD is calculated with N in denominator instead of N-1
-    stdev <- sqrt(sum((iUnList - mean(iUnList))^2) / (N))
-    skewness <- ((sum(iUnList - m)^3)/N)/(stdev^3)
+    skewness <- (sum((iUnList - m)^3)/N)/(sum((iUnList - m)^2)/N)^(3/2)
     return(skewness)
 }
 
@@ -1016,6 +1012,65 @@ DistToInflectionPoint <- function(iList, threshold, rEdge, lEdge, from = "L", to
     } else {print("ERROR: invalid arguments provided")}
     #Convert number of zero/baseline scans to a percentage of the total rtwindow size before returning result
     return(distance/(rEdge-lEdge))
+}
+
+#Zhang and Zao, BMC Bioinformatics (2014); Choi, Biotechnology and Bioprocess Engineering (2004)
+peakSharpness <- function(iList){
+	intensity <- iList
+	maxi <- which.max(intensity)
+	lEdge <- 1
+	rEdge <- length(intensity)
+	rise <- 0
+	if(maxi != 1){
+		for(i in (lEdge+1):maxi){
+			if(intensity[i-1] > 0){
+				rise <- rise + ((intensity[i]-intensity[i-1])/intensity[i-1])
+			} else {
+				rise <- rise + intensity[i]
+			}
+		}
+	}
+	fall <- 0
+	if(maxi != rEdge){
+		for(i in maxi:(rEdge-1)){
+			if(intensity[i+1] > 0){
+				fall <- fall + ((intensity[i]-intensity[i+1])/intensity[i+1])
+			} else {
+				fall <- fall + intensity[i]
+			}
+		}
+	}
+	return(rise+fall)
+}
+
+#Zhang and Zao, BMC Bioinformatics (2014)
+TPASR <- function(iList, rtL, rtR){
+	intensity <- iList
+	lEdge <- 1
+	rEdge <- length(intensity)
+	tpa <- 0.5 * (rtR-rtL) * max(intensity)
+	rpa <- sum(intensity)
+	tpasr <- abs(tpa-rpa)/tpa
+	return(tpasr)
+}
+
+#Zhang and Zao, BMC Bioinformatics (2014)
+peakSignificance <- function(iList,split){
+	intensity <- iList
+	if(length(intensity) < split){
+		return(max(intensity)/min(intensity))
+	}
+	regionSize <- length(intensity)/split
+	lWindow <- intensity[1:regionSize]
+	midWindow <- intensity[(2*regionSize):(3*regionSize)]
+	rWindow <- intensity[(4*regionSize):length(intensity)]
+
+	midMean <- mean(midWindow)
+	lrMean <- mean(c(lWindow, rWindow))
+	if(lrMean < 1){
+		lrMean <- 1
+	}
+	return(midMean/lrMean)
 }
 
 svmObjectm <- function (path) {
@@ -1061,7 +1116,7 @@ metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, rtmax, mz, ppm) {
         derivativeCount=NA,zeroCount=NA,maxIntensity=NA,
         rtWindow=NA,kurtosis=NA,skew=NA))
 	}
-		
+
     if (rEdge == lEdge) {
         if (lEdge > 1) {
             lEdge <- lEdge - 1
@@ -1085,6 +1140,9 @@ metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, rtmax, mz, ppm) {
     outsideIntensitySumV <- outsideIntensitySum(iList, rEdge, lEdge, rEdgev, lEdgev)
     distToInflL2RV <- DistToInflectionPoint(iList, 1000, rEdge, lEdge, from = "L", to = "R")
     distToInflR2LV <- DistToInflectionPoint(iList, 1000, rEdge, lEdge, from = "R", to = "L")
+    peakSignificanceV <- peakSignificance(iList, 5)
+    peakSharpnessV <- peakSharpness(iList)
+    TPASRV <- TPASR(iList, lEdge, rEdge)
 #    insideIntensitySumV <- insideIntensitySum(iList, rEdge, lEdge, rEdgev, lEdgev)
     # return(predict(svmObject, matrix(c(ms2Call(cwrt, rt), 
     #     noiseDetector(rTime, iList, rEdgev, lEdgev), 
@@ -1107,11 +1165,14 @@ metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, rtmax, mz, ppm) {
 		distToInflL2RV,
 		distToInflR2LV
 		), nrow=1, ncol=12), decision.values=FALSE)
-		
+
     if (length(metricV) < 1) {
         metricV <- NULL
     }
     return(list(metric=as.character(metricV),ms2Call=ms2CallV,noise=noiseDetectorV,normality=normalityTestsV,
         derivativeCount=derivativeChangesV,zeroCount=zeroCountsV,maxIntensity=maxIntensityV,
-        rtWindow=rtWindowV,kurtosis=kurtosisV,skew=skewV))
+        rtWindow=rtWindowV,kurtosis=kurtosisV,skew=skewV
+		#,outsideIntensitySum=outsideIntensitySumV,distToInflL2RV,distToInflR2LV
+		,peakSig=peakSignificanceV,peakSharp=peakSharpnessV,TPASR=TPASRV
+		))
 }
