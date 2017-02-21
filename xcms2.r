@@ -490,6 +490,7 @@ selectMass <- function(xcmsRaw, mass, rt, massWindow, peakCalcLoader=FALSE, rtw)
 #  of detected peaks.
 ########################################################################################
 cwMerge <- function(xcmsRaw, peakwidths, ppm, prefilter, snthresh, integrate, mzdiff, roi, scrange, scrange2) {
+
     emptyMat <- matrix(c(rep(NA, 10)), nrow=1)
     sink(tempfile())
     cw <- lapply(peakwidths, function(w) {
@@ -1073,6 +1074,44 @@ peakSignificance <- function(iList,split){
 	return(midMean/lrMean)
 }
 
+FWHM <- function (rTime, iList, lEdge, rEdge) {
+	iList = iList[lEdge:rEdge]
+	rTime = rTime[lEdge:rEdge]
+	halfmax <- max(iList)/2
+    max_index <- which.max(iList)
+    
+	left = max_index
+	lastdiff = Inf
+	i = max_index-1
+	while(i >= 1){
+		currdiff = abs(iList[i]-halfmax)
+		if(iList[i] > halfmax | currdiff < lastdiff){
+			left = i
+			lastdiff = currdiff
+		} else{
+			break
+		}
+		i = i-1
+	}
+
+	right = max_index
+	lastdiff = Inf
+	i = max_index+1
+	while(i <= length(iList)){
+		currdiff = abs(iList[i]-halfmax)
+		if(iList[i] > halfmax | currdiff < lastdiff){
+			right = i
+			lastdiff = currdiff
+		} else{
+			break
+		}
+		i = i+1
+	}
+
+    return(rTime[right]-rTime[left])
+}
+
+
 svmObjectm <- function (path) {
     # #dat <- read.csv(path, colClasses=c('NULL',NA,NA,NA,NA,'NULL',NA,NA,NA,NA))
     # dat <- read.table(path, colClasses=c('NULL',NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA),header=TRUE) #14 col
@@ -1143,6 +1182,7 @@ metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, rtmax, mz, ppm) {
     peakSignificanceV <- peakSignificance(iList, 5)
     peakSharpnessV <- peakSharpness(iList)
     TPASRV <- TPASR(iList, lEdge, rEdge)
+    FWHMV <- FWHM(rTime, iList, lEdge, rEdge)
 #    insideIntensitySumV <- insideIntensitySum(iList, rEdge, lEdge, rEdgev, lEdgev)
     # return(predict(svmObject, matrix(c(ms2Call(cwrt, rt), 
     #     noiseDetector(rTime, iList, rEdgev, lEdgev), 
@@ -1173,6 +1213,6 @@ metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, rtmax, mz, ppm) {
         derivativeCount=derivativeChangesV,zeroCount=zeroCountsV,maxIntensity=maxIntensityV,
         rtWindow=rtWindowV,kurtosis=kurtosisV,skew=skewV
 		#,outsideIntensitySum=outsideIntensitySumV,distToInflL2RV,distToInflR2LV
-		,peakSig=peakSignificanceV,peakSharp=peakSharpnessV,TPASR=TPASRV
+		,peakSig=peakSignificanceV,peakSharp=peakSharpnessV,TPASR=TPASRV,FWHM=FWHMV
 		))
 }
