@@ -473,7 +473,6 @@ findEmptyPeaks <- function(row, column, xcmsRaw, peak, parsedF1, minCol, maxCol,
     if (is.na(row[["mass"]]) || any(row[["mass"]] < 0)) {
         return(peak)
     }
-	#Andy hardcoded SILAC data to use xcalRt from rep b/c of issue with Ynes' data--doublecheck if this has been resolved
     if (SILAC) {
         if (row[["rt"]][column] > 0 && !is.na(row[["path"]][column])) {
             myfrac <- parsedF1[row[["path"]][column],"fraction"][[1]]
@@ -498,6 +497,10 @@ findEmptyPeaks <- function(row, column, xcmsRaw, peak, parsedF1, minCol, maxCol,
 						peak[l,"zeroCount"] <- p[["peaks"]][[l]][["metric"]][["zeroCount"]]
 						peak[l,"maxIntensity"] <- p[["peaks"]][[l]][["metric"]][["maxIntensity"]]
 						peak[l,"rtWindow"] <- p[["peaks"]][[l]][["metric"]][["rtWindow"]]
+						peak[l,"peakSig"] <- p[["peaks"]][[l]][["metric"]][["peakSig"]]
+						peak[l,"peakSharp"] <- p[["peaks"]][[l]][["metric"]][["peakSharp"]]
+						peak[l,"TPASR"] <- p[["peaks"]][[l]][["metric"]][["TPASR"]]
+						peak[l,"FWHM"] <- p[["peaks"]][[l]][["metric"]][["FWHM"]]
                     }
                 }
             }
@@ -543,6 +546,10 @@ findEmptyPeaks <- function(row, column, xcmsRaw, peak, parsedF1, minCol, maxCol,
 									peak[l,"zeroCount"] <- p[["peaks"]][[l]][["metric"]][["zeroCount"]]
 									peak[l,"maxIntensity"] <- p[["peaks"]][[l]][["metric"]][["maxIntensity"]]
 									peak[l,"rtWindow"] <- p[["peaks"]][[l]][["metric"]][["rtWindow"]]
+									peak[l,"peakSig"] <- p[["peaks"]][[l]][["metric"]][["peakSig"]]
+									peak[l,"peakSharp"] <- p[["peaks"]][[l]][["metric"]][["peakSharp"]]
+									peak[l,"TPASR"] <- p[["peaks"]][[l]][["metric"]][["TPASR"]]
+									peak[l,"FWHM"] <- p[["peaks"]][[l]][["metric"]][["FWHM"]]
                                 }
                             }
                             peak[,"fraction"] <- myfrac
@@ -570,6 +577,10 @@ findEmptyPeaks <- function(row, column, xcmsRaw, peak, parsedF1, minCol, maxCol,
 											peak[l,"zeroCount"] <- p[["peaks"]][[l]][["metric"]][["zeroCount"]]
 											peak[l,"maxIntensity"] <- p[["peaks"]][[l]][["metric"]][["maxIntensity"]]
 											peak[l,"rtWindow"] <- p[["peaks"]][[l]][["metric"]][["rtWindow"]]
+											peak[l,"peakSig"] <- p[["peaks"]][[l]][["metric"]][["peakSig"]]
+											peak[l,"peakSharp"] <- p[["peaks"]][[l]][["metric"]][["peakSharp"]]
+											peak[l,"TPASR"] <- p[["peaks"]][[l]][["metric"]][["TPASR"]]
+											peak[l,"FWHM"] <- p[["peaks"]][[l]][["metric"]][["FWHM"]]
                                         }
                                     }
                                     peak[,"fraction"] <- myfrac
@@ -594,6 +605,10 @@ findEmptyPeaks <- function(row, column, xcmsRaw, peak, parsedF1, minCol, maxCol,
 											peak[l,"zeroCount"] <- p[["peaks"]][[l]][["metric"]][["zeroCount"]]
 											peak[l,"maxIntensity"] <- p[["peaks"]][[l]][["metric"]][["maxIntensity"]]
 											peak[l,"rtWindow"] <- p[["peaks"]][[l]][["metric"]][["rtWindow"]]
+											peak[l,"peakSig"] <- p[["peaks"]][[l]][["metric"]][["peakSig"]]
+											peak[l,"peakSharp"] <- p[["peaks"]][[l]][["metric"]][["peakSharp"]]
+											peak[l,"TPASR"] <- p[["peaks"]][[l]][["metric"]][["TPASR"]]
+											peak[l,"FWHM"] <- p[["peaks"]][[l]][["metric"]][["FWHM"]]
                                         }
                                     }
                                     peak[,"fraction"] <- myfrac
@@ -626,6 +641,11 @@ findEmptyPeaks <- function(row, column, xcmsRaw, peak, parsedF1, minCol, maxCol,
 					peak[l,"zeroCount"] <- p[["peaks"]][[l]][["metric"]][["zeroCount"]]
 					peak[l,"maxIntensity"] <- p[["peaks"]][[l]][["metric"]][["maxIntensity"]]
 					peak[l,"rtWindow"] <- p[["peaks"]][[l]][["metric"]][["rtWindow"]]
+					peak[l,"peakSig"] <- p[["peaks"]][[l]][["metric"]][["peakSig"]]
+					peak[l,"peakSharp"] <- p[["peaks"]][[l]][["metric"]][["peakSharp"]]
+					peak[l,"TPASR"] <- p[["peaks"]][[l]][["metric"]][["TPASR"]]
+					peak[l,"TPASR"] <- p[["peaks"]][[l]][["metric"]][["TPASR"]]
+					peak[l,"FWHM"] <- p[["peaks"]][[l]][["metric"]][["FWHM"]]
                 }
             }
             peak[,"fraction"] <- myfrac
@@ -671,6 +691,10 @@ findEmptyPeaks <- function(row, column, xcmsRaw, peak, parsedF1, minCol, maxCol,
 										peak[l,"zeroCount"] <- p[["peaks"]][[l]][["metric"]][["zeroCount"]]
 										peak[l,"maxIntensity"] <- p[["peaks"]][[l]][["metric"]][["maxIntensity"]]
 										peak[l,"rtWindow"] <- p[["peaks"]][[l]][["metric"]][["rtWindow"]]
+										peak[l,"peakSig"] <- p[["peaks"]][[l]][["metric"]][["peakSig"]]
+										peak[l,"peakSharp"] <- p[["peaks"]][[l]][["metric"]][["peakSharp"]]
+										peak[l,"TPASR"] <- p[["peaks"]][[l]][["metric"]][["TPASR"]]
+										peak[l,"FWHM"] <- p[["peaks"]][[l]][["metric"]][["FWHM"]]
                                     }
                                 }
                                 peak[,"fraction"] <- myfrac
@@ -698,6 +722,10 @@ findEmptyPeaks <- function(row, column, xcmsRaw, peak, parsedF1, minCol, maxCol,
 												peak[l,"zeroCount"] <- p[["peaks"]][[l]][["metric"]][["zeroCount"]]
 												peak[l,"maxIntensity"] <- p[["peaks"]][[l]][["metric"]][["maxIntensity"]]
 												peak[l,"rtWindow"] <- p[["peaks"]][[l]][["metric"]][["rtWindow"]]
+												peak[l,"peakSig"] <- p[["peaks"]][[l]][["metric"]][["peakSig"]]
+												peak[l,"peakSharp"] <- p[["peaks"]][[l]][["metric"]][["peakSharp"]]
+												peak[l,"TPASR"] <- p[["peaks"]][[l]][["metric"]][["TPASR"]]
+												peak[l,"FWHM"] <- p[["peaks"]][[l]][["metric"]][["FWHM"]]
                                             }
                                         }
                                         peak[,"fraction"] <- myfrac
@@ -722,7 +750,11 @@ findEmptyPeaks <- function(row, column, xcmsRaw, peak, parsedF1, minCol, maxCol,
 												peak[l,"zeroCount"] <- p[["peaks"]][[l]][["metric"]][["zeroCount"]]
 												peak[l,"maxIntensity"] <- p[["peaks"]][[l]][["metric"]][["maxIntensity"]]
 												peak[l,"rtWindow"] <- p[["peaks"]][[l]][["metric"]][["rtWindow"]]
-                                            }
+												peak[l,"peakSig"] <- p[["peaks"]][[l]][["metric"]][["peakSig"]]
+												peak[l,"peakSharp"] <- p[["peaks"]][[l]][["metric"]][["peakSharp"]]
+												peak[l,"TPASR"] <- p[["peaks"]][[l]][["metric"]][["TPASR"]]
+												peak[l,"FWHM"] <- p[["peaks"]][[l]][["metric"]][["FWHM"]]
+											}
                                         }
                                         peak[,"fraction"] <- myfrac
                                         peak[,"alRT"] <- tmpRT
@@ -792,7 +824,11 @@ writeOutput <- function(parsedF2, resultsF2, massLength, columnLength, npeptides
 					  resultsF2[[i,j]][k,"ms2Call"],",",
 					  resultsF2[[i,j]][k,"zeroCount"],",",
 					  resultsF2[[i,j]][k,"maxIntensity"],",",
-					  resultsF2[[i,j]][k,"rtWindow"],
+					  resultsF2[[i,j]][k,"rtWindow"],",",
+					  resultsF2[[i,j]][k,"peakSig"],",",
+					  resultsF2[[i,j]][k,"peakSharp"],",",
+					  resultsF2[[i,j]][k,"TPASR"],",",
+					  resultsF2[[i,j]][k,"FWHM"],
 					  "|", sep="")
                 }
                 if (j < columnLength) {
@@ -823,7 +859,11 @@ writeOutput <- function(parsedF2, resultsF2, massLength, columnLength, npeptides
 				  resultsF2[[i,j]][1,"ms2Call"],",",
 				  resultsF2[[i,j]][1,"zeroCount"],",",
 				  resultsF2[[i,j]][1,"maxIntensity"],",",
-				  resultsF2[[i,j]][1,"rtWindow"],
+				  resultsF2[[i,j]][1,"rtWindow"],",",
+				  resultsF2[[i,j]][1,"peakSig"],",",
+				  resultsF2[[i,j]][1,"peakSharp"],",",
+				  resultsF2[[i,j]][1,"TPASR"],",",
+				  resultsF2[[i,j]][1,"FWHM"],
 				  sep="")
                 if (j < columnLength) {
                     output <- paste(output, "\t", sep="")
@@ -1008,10 +1048,10 @@ svmObject <- svmObjectm(trainingSetPath)
 print(paste("Number of cores detected: ", cores, sep=""))
 
 # Temporary holder, used to store peaks detected
-peak <- matrix(nrow=parsedF2L$massLength, ncol=16)
+peak <- matrix(nrow=parsedF2L$massLength, ncol=20)
 colnames(peak) <- c("alRT", "fraction", "peakRTL", "peakRT", "peakRTR", "peakArea",
 	"peakWidth", "metric", "sn", "kurtosis", "skew", "derivativeCount", "ms2Call",
-	"zeroCount", "maxIntensity", "rtWindow") #jmb
+	"zeroCount", "maxIntensity", "rtWindow", "peakSig", "peakSharp", "TPASR", "FWHM") #jmb
 
 peak[,"alRT"] <- 0
 peak[,"fraction"] <- if(SILAC) -1 else 0
@@ -1029,6 +1069,10 @@ peak[,"ms2Call"] <- ""
 peak[,"zeroCount"] <- ""
 peak[,"maxIntensity"] <- ""
 peak[,"rtWindow"] <- ""
+peak[,"peakSig"] <- ""
+peak[,"peakSharp"] <- ""
+peak[,"TPASR"] <- ""
+peak[,"FWHM"] <- ""
 
 tempFolder <- parsedConstants[["tempdir"]]
 

@@ -25,7 +25,8 @@ PREFILTER <<- c(1, 1000)
 SNTHRESH <<- 10
 INTEGRATE <<- 2
 MZDIFF <<- -10000.0
-PEAKWIDTHL <<- list(c(2, 80), c(5, 80), c(10, 80), c(15, 80), c(20, 80))
+#PEAKWIDTHL <<- list(c(2, 80), c(5, 80), c(10, 80), c(15, 80), c(20, 80))
+PEAKWIDTHL <<- list(c(10, 80))
 
 PEAKWIDTHG <<- c(10, 80)
 # GSTEP <<- 0.001
@@ -148,7 +149,8 @@ getChromatogram <- function(xcmsRaw, mzrange, rtrange) {
 ########################################################################################
 peakCalc <- function(xcmsRaw, masslist, rt, massWindow, svmObject=NULL, metric=FALSE, peakCalcLoader=FALSE, rtw=RTWINDOW) {
     p <- lapply(masslist, function(mass) selectMass(xcmsRaw, mass, rt, massWindow, peakCalcLoader, rtw))
-    nPeaks <- length(p)
+    #print(p)
+	nPeaks <- length(p)
     peakAreas <- unlist(lapply(p, '[[', "peakArea"))
 
     if (!all(peakAreas > 0) || any(is.na(peakAreas))) {
@@ -175,7 +177,7 @@ peakCalc <- function(xcmsRaw, masslist, rt, massWindow, svmObject=NULL, metric=F
 			    if(p[[l]][["MZx2"]] == TRUE || p[[l]][["MZx2"]] == 1){
 				    massWindow <- massWindow * 2
 				}
-                m <- metrics(xcmsRaw, svmObject, rt, p[[l]][["peakApexRT"]], p[[l]][["peakLeftRT"]], p[[l]][["peakRightRT"]], masslist[l], massWindow)
+				m <- metrics(xcmsRaw, svmObject, rt, p[[l]][["peakApexRT"]], p[[l]][["peakLeftRT"]],p[[l]][["peakLeftsc"]], p[[l]][["peakRightRT"]], p[[l]][["peakRightsc"]], masslist[l], massWindow, p[[l]][["sigma"]])
 #                if (length(m) < 1) {
                 if (is.null(m[["metric"]])){ 
                     min <- head(xcmsRaw@scantime, n=1)
@@ -184,13 +186,17 @@ peakCalc <- function(xcmsRaw, masslist, rt, massWindow, svmObject=NULL, metric=F
                     if (peakLeft < min) {
                         peakLeft <- min
                     }
+					peakLeftsc = p[[l]][["peakLeftsc"]]
                     peakRight <- p[[l]][["peakApexRT"]] + 30
                     if (peakRight > max) {
                         peakRight <- max
                     }
+					peakRightsc = p[[l]][["peakRightsc"]]
 #                   tryCatch(p[[l]][["metric"]] <- metrics(xcmsRaw, svmObject, rt, p[[l]][["peakApexRT"]], peakLeft, peakRight, masslist[l], massWindow), 
 #                       error=function(ex) p[[l]][["metric"]] <- "no score")
-                    m2 <- metrics(xcmsRaw, svmObject, rt, p[[l]][["peakApexRT"]], peakLeft, peakRight, masslist[l], massWindow)
+                    m2 <- metrics(xcmsRaw, svmObject, rt, p[[l]][["peakApexRT"]], peakLeft, peakLeftsc, peakRight, peakRightsc, masslist[l], massWindow, p[[l]][["sigma"]])
+                    #use line below for calling metrics
+					#m2 <- metrics(xcmsRaw, svmObject, rt, p[[l]][["peakApexRT"]], peakLeft,p[[l]][["peakLeftsc"]], peakRight, p[[l]][["peakRightsc"]], masslist[l], massWindow, p[[l]][["sigma"]])
                     if (!is.null(m2[["metric"]])) {
                         p[[l]][["metric"]] <- m2
                     } else {
@@ -281,11 +287,11 @@ selectMass <- function(xcmsRaw, mass, rt, massWindow, peakCalcLoader=FALSE, rtw)
             newPeaks <- peaks[indices,]
             filteredPeaks <- tryCatch(newPeaks[!duplicated(newPeaks[c("V4")]),], error = function(ex) NA)
             if(nrow(filteredPeaks) != 0 ){
-             	filteredPeaks[["V11"]] <- TRUE #jmb added 150615--boolean signifies that mz was doubled
+             	filteredPeaks[["V23"]] <- TRUE #jmb added 150615--boolean signifies that mz was doubled
 			}
 		}
     } else {
-	     filteredPeaks[["V11"]] <- FALSE #jmb added 150615
+	     filteredPeaks[["V23"]] <- FALSE #jmb added 150615
 	}
 
 	
@@ -305,8 +311,8 @@ selectMass <- function(xcmsRaw, mass, rt, massWindow, peakCalcLoader=FALSE, rtw)
             if (length(roiIndices) > 0) {
                 newdf <- roidf[roiIndices,]
                 roiL <- lapply(1:nrow(newdf), function(i) list(mzmin=newdf[i,"X2"], mzmax=newdf[i,"X3"], scmin=newdf[i,"X4"], scmax=newdf[i,"X5"]))
-                peaks <- cwMerge(xcmsRaw, PEAKWIDTHL, CWPPM, PREFILTER, SNTHRESH, INTEGRATE, MZDIFF, roiL, scrange, scrange2)
-                if (nrow(peaks) > 0) {
+                peaks <- cwMerge(xcmsRaw, PEAKWIDTHL, CWPPM, PREFILTER, SNTHRESH, INTEGRATE, MZDIFF, roiL, scrange, scrange2)  
+			   if (nrow(peaks) > 0) {
                     match1 <- intersect(which(peaks[,"V1"] >= mzrange[1]), which(peaks[,"V1"] <= mzrange[2])) # if mz of is within mzrange of original ppm
                     match2 <- intersect(which(peaks[,"V2"] >= mzrange[1]), which(peaks[,"V2"] <= mzrange[2])) # if mzmin of is within mzrange of original ppm
                     match3 <- intersect(which(peaks[,"V3"] >= mzrange[1]), which(peaks[,"V3"] <= mzrange[2])) # if mzmax of is within mzrange of original ppm
@@ -320,7 +326,7 @@ selectMass <- function(xcmsRaw, mass, rt, massWindow, peakCalcLoader=FALSE, rtw)
                     newPeaks <- peaks[indices,]
                     filteredPeaks <- tryCatch(newPeaks[!duplicated(newPeaks[c("V4")]),], error = function(ex) NA)
 					if(nrow(filteredPeaks) != 0){
-             	        filteredPeaks[["V11"]] <- FALSE #jmb added 150615--boolean signifies that mz was doubled	
+             	        filteredPeaks[["V23"]] <- FALSE #jmb added 150615--boolean signifies that mz was doubled	
 			        }
                 }
             }
@@ -468,14 +474,15 @@ selectMass <- function(xcmsRaw, mass, rt, massWindow, peakCalcLoader=FALSE, rtw)
 
         #pseudoCalc <- pseudoPeakCalc2(xcmsRaw, mzrange=mzrange, scanrange=c(peakLeftsc,peakRightsc), maxIntensity=maxInt, baseline=baseline, sdnoise=baselinesd[["sdnoise"]])
         
-        return(list(peakArea=-pseudoCalc[["intb"]], peakApexRT=maxRt, peakLeftRT=peakLeftRT, 
-                    peakRightRT=peakRightRT, peakWidth=peakRightRT-peakLeftRT, 
-                    sn=pseudoCalc[["sn"]], metric=NA, MZx2=FALSE))
+        return(list(peakArea=-pseudoCalc[["intb"]], peakApexRT=maxRt, peakLeftRT=peakLeftRT, peakLeftsc = peakLeftsc,
+                    peakRightRT=peakRightRT, peakRightsc = peakRightsc, peakWidth=peakRightRT-peakLeftRT, 
+                    sn=pseudoCalc[["sn"]], metric=NA, sigma=NA, MZx2=FALSE)) #jmb this needs to be fixed--sigma shouldn't be NA
     } else {
         # pl <- unlist(filteredPeaks[which.min(abs(filteredPeaks[,"V4"] - as.numeric(rt))),]) # Pick peak with rt closest to input rt
 		pl <- unlist(filteredPeaks[which.max(filteredPeaks[,"V8"]),]) # Pick peak with highest intensity
-        return(list(peakArea=pl[["V8"]], peakApexRT=pl[["V4"]], peakLeftRT=pl[["V5"]], peakRightRT=pl[["V6"]], 
-		  peakWidth=pl[["V6"]]-pl[["V5"]], sn=pl[["V10"]], metric=NA, MZx2=pl[["V11"]]))
+		return(list(peakArea=pl[["V8"]], peakApexRT=pl[["V4"]], peakLeftRT=pl[["V5"]], peakLeftsc=pl[["V19"]],
+		  peakRightRT=pl[["V6"]], peakRightsc=pl[["V20"]], peakWidth=pl[["V6"]]-pl[["V5"]], sn=pl[["V10"]],
+		  metric=NA, sigma=pl[["V13"]], MZx2=pl[["V23"]]))
     }
 }
 
@@ -490,19 +497,19 @@ selectMass <- function(xcmsRaw, mass, rt, massWindow, peakCalcLoader=FALSE, rtw)
 #  of detected peaks.
 ########################################################################################
 cwMerge <- function(xcmsRaw, peakwidths, ppm, prefilter, snthresh, integrate, mzdiff, roi, scrange, scrange2) {
-    emptyMat <- matrix(c(rep(NA, 10)), nrow=1)
-    sink(tempfile())
+    emptyMat <- matrix(c(rep(NA, 22)), nrow=1)
+	sink(tempfile())
     cw <- lapply(peakwidths, function(w) {
-        mat <- rbind(tryCatch(suppressWarnings(findPeaks.centWave(xcmsRaw, ppm=ppm, peakwidth=w, prefilter=prefilter, 
+        mat <- rbind(tryCatch(suppressWarnings(findPeaks.centWave(xcmsRaw, ppm=ppm, peakwidth=w, prefilter=prefilter, fitgauss=TRUE,
                                                         snthresh=snthresh, integrate=integrate, mzdiff=mzdiff, 
-                                                        ROI.list=roi)), error = function(ex) {emptyMat}), 
-        tryCatch(suppressWarnings(findPeaks.centWave(xcmsRaw, ppm=CWPPM, peakwidth=w, prefilter=prefilter, 
+                                                        ROI.list=roi, verbose.columns=TRUE)), error = function(ex) {emptyMat}), 
+        tryCatch(suppressWarnings(findPeaks.centWave(xcmsRaw, ppm=CWPPM, peakwidth=w, prefilter=prefilter, fitgauss=TRUE,
                                                         snthresh=snthresh, integrate=integrate, mzdiff=mzdiff, 
-                                                        ROI.list=roi, scanrange=scrange)), error = function(ex) {emptyMat}),
-        tryCatch(suppressWarnings(findPeaks.centWave(xcmsRaw, ppm=CWPPM, peakwidth=w, prefilter=prefilter, 
+                                                        ROI.list=roi, scanrange=scrange, verbose.columns=TRUE)), error = function(ex) {emptyMat}),
+        tryCatch(suppressWarnings(findPeaks.centWave(xcmsRaw, ppm=CWPPM, peakwidth=w, prefilter=prefilter, fitgauss=TRUE,
                                                         snthresh=snthresh, integrate=integrate, mzdiff=mzdiff, 
-                                                        ROI.list=roi, scanrange=scrange2)), error = function(ex) {emptyMat}))
-        matc <- matrix(mat[rowSums(is.na(mat))!=10,], ncol=10)
+                                                        ROI.list=roi, scanrange=scrange2, verbose.columns=TRUE)), error = function(ex) {emptyMat}))
+        matc <- matrix(mat[rowSums(is.na(mat))!=22,], ncol=22)
         if (nrow(matc) == 0) {
             return(NA)
         } else {
@@ -510,7 +517,7 @@ cwMerge <- function(xcmsRaw, peakwidths, ppm, prefilter, snthresh, integrate, mz
         }
         })
     sink()
-    peaks <- as.data.frame(do.call(rbind, rev(cw[!is.na(cw)])), ncol=10)
+    peaks <- as.data.frame(do.call(rbind, rev(cw[!is.na(cw)])), ncol=22)
     return(peaks)
 }
 
@@ -1073,6 +1080,50 @@ peakSignificance <- function(iList,split){
 	return(midMean/lrMean)
 }
 
+# FWHM <- function (rTime, iList, lEdge, rEdge) {
+	# iList = iList[lEdge:rEdge]
+	# rTime = rTime[lEdge:rEdge]
+	# halfmax <- max(iList)/2
+    # max_index <- which.max(iList)
+    
+	# left = max_index
+	# lastdiff = Inf
+	# i = max_index-1
+	# while(i >= 1){
+		# currdiff = abs(iList[i]-halfmax)
+		# if(iList[i] > halfmax | currdiff < lastdiff){
+			# left = i
+			# lastdiff = currdiff
+		# } else{
+			# break
+		# }
+		# i = i-1
+	# }
+
+	# right = max_index
+	# lastdiff = Inf
+	# i = max_index+1
+	# while(i <= length(iList)){
+		# currdiff = abs(iList[i]-halfmax)
+		# if(iList[i] > halfmax | currdiff < lastdiff){
+			# right = i
+			# lastdiff = currdiff
+		# } else{
+			# break
+		# }
+		# i = i+1
+	# }
+
+    # return(rTime[right]-rTime[left])
+# }
+
+FWHM = function(sigma, lrt, lsc, rrt, rsc){
+	perc = sigma/(rsc-lsc)
+	sigma = (rrt-lrt) * perc
+	FWHM = 2 * sqrt(2 * log(2)) * sigma
+	return(FWHM)
+}
+
 svmObjectm <- function (path) {
     # #dat <- read.csv(path, colClasses=c('NULL',NA,NA,NA,NA,'NULL',NA,NA,NA,NA))
     # dat <- read.table(path, colClasses=c('NULL',NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA),header=TRUE) #14 col
@@ -1103,7 +1154,7 @@ svmObjectm <- function (path) {
 	return(svm(attribs, ranks, type="C-classification", cost=cost, gamma=gamma, class.weights=c("0"=nWeight,"1"=pWeight)))
 }
 
-metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, rtmax, mz, ppm) {
+metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, scmin, rtmax, scmax, mz, ppm, sigma) {
 	EIC <- getChromatogram(xcmsRaw, mzrange=pmMz(mz, ppm), rtrange=c(rtmin-(rtmax-rtmin), rtmax+(rtmax-rtmin)))
     rTime <- EIC$rt
     iList <- EIC$intensity
@@ -1114,7 +1165,9 @@ metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, rtmax, mz, ppm) {
 	if(all(unlist(iList)==0)){
 	    return(list(metric=NULL,ms2Call=NA,noise=NA,normality=NA,
         derivativeCount=NA,zeroCount=NA,maxIntensity=NA,
-        rtWindow=NA,kurtosis=NA,skew=NA))
+        rtWindow=NA,kurtosis=NA,skew=NA,peakSig=NA,
+		peakSharp=NA,TPASR=NA,FWHM=NA
+		))
 	}
 
     if (rEdge == lEdge) {
@@ -1134,7 +1187,7 @@ metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, rtmax, mz, ppm) {
     derivativeChangesV <- derivativeChanges(rTime, iList, rEdge, lEdge)
     zeroCountsV <- zeroCounts(iList, rEdge, lEdge)
     maxIntensityV <- maxIntensity(iList, rEdge, lEdge)
-    rtWindowV <- rtWindow(rEdgev, lEdgev)
+    rtWindowV <- rtWindow(rtmax, rtmin)
     kurtosisV <- kurtosis(iList)
     skewV <- skew(iList)
     outsideIntensitySumV <- outsideIntensitySum(iList, rEdge, lEdge, rEdgev, lEdgev)
@@ -1143,6 +1196,8 @@ metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, rtmax, mz, ppm) {
     peakSignificanceV <- peakSignificance(iList, 5)
     peakSharpnessV <- peakSharpness(iList)
     TPASRV <- TPASR(iList, lEdge, rEdge)
+    tryCatch(FWHMV <- FWHM(sigma, lEdge, scmin, rEdge, scmax), 
+      error=function(ex) FWHMV <- NA)
 #    insideIntensitySumV <- insideIntensitySum(iList, rEdge, lEdge, rEdgev, lEdgev)
     # return(predict(svmObject, matrix(c(ms2Call(cwrt, rt), 
     #     noiseDetector(rTime, iList, rEdgev, lEdgev), 
@@ -1173,6 +1228,6 @@ metrics <- function (xcmsRaw, svmObject, rt, cwrt, rtmin, rtmax, mz, ppm) {
         derivativeCount=derivativeChangesV,zeroCount=zeroCountsV,maxIntensity=maxIntensityV,
         rtWindow=rtWindowV,kurtosis=kurtosisV,skew=skewV
 		#,outsideIntensitySum=outsideIntensitySumV,distToInflL2RV,distToInflR2LV
-		,peakSig=peakSignificanceV,peakSharp=peakSharpnessV,TPASR=TPASRV
+		,peakSig=peakSignificanceV,peakSharp=peakSharpnessV,TPASR=TPASRV,FWHM=FWHMV
 		))
 }
