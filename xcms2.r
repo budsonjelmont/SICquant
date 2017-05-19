@@ -473,7 +473,7 @@ selectMass <- function(xcmsRaw, mass, rt, massWindow, peakCalcLoader=FALSE, rtw)
                     sn=pseudoCalc[["sn"]], metric=NA, MZx2=FALSE))
     } else {
         # pl <- unlist(filteredPeaks[which.min(abs(filteredPeaks[,"V4"] - as.numeric(rt))),]) # Pick peak with rt closest to input rt
-		pl <- unlist(filteredPeaks[which.max(filteredPeaks[,"V8"]),]) # Pick peak with highest intensity
+	pl <- unlist(filteredPeaks[which.max(filteredPeaks[,"V8"]),]) # Pick peak with highest intensity
         return(list(peakArea=pl[["V8"]], peakApexRT=pl[["V4"]], peakLeftRT=pl[["V5"]], peakRightRT=pl[["V6"]], 
 		  peakWidth=pl[["V6"]]-pl[["V5"]], sn=pl[["V10"]], metric=NA, MZx2=pl[["V11"]]))
     }
