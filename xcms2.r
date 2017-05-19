@@ -25,8 +25,7 @@ PREFILTER <<- c(1, 1000)
 SNTHRESH <<- 10
 INTEGRATE <<- 2
 MZDIFF <<- -10000.0
-#PEAKWIDTHL <<- list(c(2, 80), c(5, 80), c(10, 80), c(15, 80), c(20, 80))
-PEAKWIDTHL <<- list(c(10, 80))
+PEAKWIDTHL <<- list(c(2, 80), c(5, 80), c(10, 80), c(15, 80), c(20, 80))
 
 PEAKWIDTHG <<- c(10, 80)
 # GSTEP <<- 0.001
@@ -173,7 +172,7 @@ peakCalc <- function(xcmsRaw, masslist, rt, massWindow, svmObject=NULL, metric=F
     if (metric) {
         for (l in 1:nPeaks) {
             if (!is.na(p[[l]][["peakArea"]])) {
-                #jmb added 150616 check if mass window was doubled to find peak, and adjust it if it was
+                #check if mass window was doubled to find peak, and adjust it if it was
 			    if(p[[l]][["MZx2"]] == TRUE || p[[l]][["MZx2"]] == 1){
 				    massWindow <- massWindow * 2
 				}
@@ -287,11 +286,11 @@ selectMass <- function(xcmsRaw, mass, rt, massWindow, peakCalcLoader=FALSE, rtw)
             newPeaks <- peaks[indices,]
             filteredPeaks <- tryCatch(newPeaks[!duplicated(newPeaks[c("V4")]),], error = function(ex) NA)
             if(nrow(filteredPeaks) != 0 ){
-             	filteredPeaks[["V23"]] <- TRUE #jmb added 150615--boolean signifies that mz was doubled
+             	filteredPeaks[["V23"]] <- TRUE #boolean signifies that mz was doubled
 			}
 		}
     } else {
-	     filteredPeaks[["V23"]] <- FALSE #jmb added 150615
+	     filteredPeaks[["V23"]] <- FALSE
 	}
 
 	
@@ -326,7 +325,7 @@ selectMass <- function(xcmsRaw, mass, rt, massWindow, peakCalcLoader=FALSE, rtw)
                     newPeaks <- peaks[indices,]
                     filteredPeaks <- tryCatch(newPeaks[!duplicated(newPeaks[c("V4")]),], error = function(ex) NA)
 					if(nrow(filteredPeaks) != 0){
-             	        filteredPeaks[["V23"]] <- FALSE #jmb added 150615--boolean signifies that mz was doubled	
+             	        filteredPeaks[["V23"]] <- FALSE #boolean signifies that mz was doubled	
 			        }
                 }
             }
@@ -862,7 +861,6 @@ standardDeviation <- function(list) {
 # }
 
 ms2Call <- function (cwrt, rt) {
-	#changed 11032016 to return value in seconds
     return(abs(rt-cwrt))
 }
 
@@ -962,19 +960,18 @@ zeroCounts <- function (iList, rEdge, lEdge) {
 }
 
 maxIntensity <- function (iList, rEdge, lEdge) {
-    return(max(iList[lEdge:(rEdge+1)], na.rm=TRUE))	#jmb 150507: added na.rm=TRUE
+    return(max(iList[lEdge:(rEdge+1)], na.rm=TRUE))
 }
 
 outsideIntensitySum <- function(iList, rEdge, lEdge, rEdgev, lEdgev){
     return(sum(append(iList[1:lEdge],iList[rEdge:length(iList)]))/rtWindow(rEdgev,lEdgev)) #2 * rtWindow size?
 }
 
-# insideIntensitySum <- function(iList, rEdge, lEdge, rEdgev, lEdgev){
-    # return(sum(iList[lEdge,rEdge])/rtWindow(rEdgev,lEdgev))
-# }
+insideIntensitySum <- function(iList, rEdge, lEdge, rEdgev, lEdgev){
+    return(sum(iList[lEdge,rEdge])/rtWindow(rEdgev,lEdgev))
+}
 
 rtWindow <- function (rEdgev, lEdgev) {
-	#changed 11032016 to return rtWindow in seconds
     return(rEdgev - lEdgev)
 }
 
@@ -986,7 +983,6 @@ kurtosis <- function (iList){
     return(k)
 }
 
-#####Can deprecate this! skewness() is already implemented in e1071
 skew <- function(iList){
     iUnList <- unlist(iList)
     m <- mean(iUnList, na.rm=TRUE)
